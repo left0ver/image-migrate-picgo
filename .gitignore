@@ -1,3 +1,6 @@
+.vscode
+test_markdown
+src/image_migrate_picgo/_vendor
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +219,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local end-to-end smoke test results
+test/smoke_output.md
+test/smoke_*_output.md
+test/fixtures/output/

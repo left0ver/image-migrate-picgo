@@ -1,0 +1,31 @@
+[project]
+name = "image-migrate-picgo"
+version = "0.1.0"
+description = "Migrate images in one Markdown file through PicGo"
+readme = "README.md"
+authors = [
+    { name = "left0ver", email = "1614674987@qq.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "markdown-it-py>=4.0,<5",
+    "typer>=0.21,<1",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["markdown", "picgo", "image", "migration"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.scripts]
+image-migrate-picgo = "image_migrate_picgo.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12.8,<0.13.0"]
+build-backend = "uv_build"
