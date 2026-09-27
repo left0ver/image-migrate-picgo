@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="image-migrate-picgo">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A8EFF"/>
+      <stop offset="1" stop-color="#1368F0"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E3EFFF"/>
+    </linearGradient>
+    <clipPath id="card">
+      <rect x="200" y="116" width="216" height="200" rx="36"/>
+    </clipPath>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0B3B8C" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <!-- Old location: dashed outline where the image used to be -->
+  <rect x="96" y="196" width="216" height="200" rx="36" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-dasharray="30 24" stroke-dashoffset="12" opacity="0.7"/>
+  <!-- New location: the migrated image -->
+  <rect x="200" y="116" width="216" height="200" rx="36" fill="url(#sky)" filter="url(#shadow)"/>
+  <g clip-path="url(#card)">
+    <circle cx="362" cy="170" r="20" fill="#FFC53D"/>
+    <path d="M258 324 L338 222 L440 324 Z" fill="#8DC1FF"/>
+    <path d="M180 324 L266 214 L352 324 Z" fill="#1A7CFF"/>
+  </g>
+</svg>
