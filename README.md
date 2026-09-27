@@ -1,115 +1,148 @@
-# image-migrate-picgo
+<p align="center">
+  <img src="assets/logo.svg" alt="image-migrate-picgo logo" width="128">
+</p>
 
-通过 PicGo 迁移单个 Markdown 文件中的图片。支持本地图片、HTTP 图片、HTTPS 图片、Data URL、引用式 Markdown 图片和 HTML `<img>`，并保留普通链接与代码区域中的文本。
+<h1 align="center">image-migrate-picgo</h1>
 
-## 安装
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/PicGo-Server%20%7C%20CLI-blue?style=flat-square" alt="PicGo Server and CLI">
+  <img src="https://img.shields.io/badge/Images-Markdown%20%7C%20HTML-informational?style=flat-square" alt="Markdown and HTML images">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+Move every image in a Markdown file to your image host with one command. `image-migrate-picgo` uploads the images through [PicGo](https://github.com/Molunerfinn/PicGo) and rewrites their links to the uploaded URLs.
+
+It is useful when you want to:
+
+- publish notes that reference local images,
+- move images from one image host to another,
+- replace inline Base64 (Data URL) images with regular links.
+
+## Features
+
+- **Every image source**: local files, HTTP/HTTPS URLs, and image Data URLs.
+- **Every image syntax**: inline Markdown images, reference-style images, and HTML `<img>` tags.
+- **Two upload methods**: PicGo Server (the PicGo desktop app) or PicGo CLI (`picgo` from npm).
+- **Safe rewriting**: code blocks, inline code, and ordinary links stay untouched. The file is written only after every upload succeeds.
+- **No duplicate uploads**: an image referenced several times is uploaded once.
+
+## Example
+
+Before:
+
+```markdown
+![Architecture](images/architecture.png "Overview")
+![Logo][logo]
+<img src="https://old-host.example.com/screenshot.png" width="600">
+
+[logo]: ./images/logo.png
+```
+
+After running `image-migrate-picgo notes.md`:
+
+```markdown
+![Architecture](<https://cdn.example.com/architecture.png> "Overview")
+![Logo](<https://cdn.example.com/logo.png>)
+<img src="https://cdn.example.com/screenshot.png" width="600">
+
+[logo]: ./images/logo.png
+```
+
+## Installation
+
+Requires Python 3.11 or newer.
 
 ```bash
 pip install image-migrate-picgo
 ```
 
-使用 PicGo.app 时，请在设置中启动 PicGo Server；默认上传地址为 `http://127.0.0.1:36677/upload`。
+You also need an image host configured in either PicGo Server or PicGo CLI (see [Upload methods](#upload-methods)).
 
-## 支持的图片写法
+## Quick start
 
-Markdown 图片、引用式图片、HTML `<img>` 和 Data URL 都会进入迁移流程：
+1. Open the PicGo desktop app, configure an image host, and turn on **PicGo Server** in its settings.
+2. Migrate a file:
 
-```markdown
-![local](./images/photo.png)
-![remote](https://example.com/photo.png)
-![reference][photo]
+   ```bash
+   image-migrate-picgo notes.md
+   ```
 
-[photo]: ./images/photo.png
+> [!WARNING]
+> By default the Markdown file is **updated in place**. Commit or back it up first, or write the result to a new file with `--output`:
+>
+> ```bash
+> image-migrate-picgo notes.md --output notes.migrated.md
+> ```
 
-<img src="./images/photo.png" alt="Photo" width="600">
+## Upload methods
 
-![inline](data:image/png;base64,...)
-```
+### PicGo Server (default)
 
-HTML 图片迁移后会保留 `alt`、`title`、`width` 等属性。Data URL 会解码成临时图片文件，然后交给 PicGo 上传。行内代码和代码块中的图片文本保持原有内容。
-
-公网图片 URL 会直接交给 PicGo 上传；本地图片与 Data URL 仍通过本地文件上传。
-
-## CLI
-
-CLI 使用 [Typer](https://github.com/fastapi/typer) 构建。
-
-通过 PicGo Server 更新原文件：
+Uses the HTTP server built into the PicGo desktop app, at `http://127.0.0.1:36677/upload` by default.
 
 ```bash
-image-migrate-picgo README.md
+# Custom address
+image-migrate-picgo notes.md --server-url http://127.0.0.1:36677/upload
+
+# Server protected by a secret
+image-migrate-picgo notes.md --server-secret <secret>
 ```
 
-写入另一个文件：
+### PicGo CLI
+
+Uses the [PicGo core](https://github.com/PicGo/PicGo-Core) command line tool. No desktop app is needed, which suits servers and CI.
 
 ```bash
-image-migrate-picgo README.md --output README.migrated.md
-```
+npm install picgo -g
 
-通过 PicGo CLI 上传：
-
-```bash
-image-migrate-picgo README.md --method cli
-```
-
-CLI 上传调用用户安装的 PicGo CLI，默认从 `PATH` 查找 `picgo`。默认读取配置文件 `~/.picgo/config.json`；配置文件缺失时会自动启动 uploader 配置向导。安装 PicGo CLI 的方式由用户选择，本工具不会自动下载。
-
-也可以随时主动启动配置向导：
-
-```bash
+# Configure an uploader (an interactive wizard)
 image-migrate-picgo --configure
+
+# Upload through PicGo CLI
+image-migrate-picgo notes.md --method cli
 ```
 
-指定 PicGo CLI 可执行文件和配置文件：
+The configuration is saved to `~/.picgo/config.json` by default. If the configuration file does not exist, `--method cli` starts the wizard automatically.
 
-```bash
-image-migrate-picgo README.md \
-  --method cli \
-  --picgo-command /path/to/picgo \
-  --picgo-config /path/to/config.json
+## CLI options
+
+```text
+image-migrate-picgo [OPTIONS] [MARKDOWN]
 ```
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `MARKDOWN` | Markdown file to migrate | — |
+| `-o`, `--output PATH` | Write the result to this file instead of updating `MARKDOWN` | Update in place |
+| `--method [server\|cli]` | Upload method | `server` |
+| `--server-url TEXT` | PicGo Server upload URL | `http://127.0.0.1:36677/upload` |
+| `--server-secret TEXT` | PicGo Server secret, sent as a Bearer token | — |
+| `--picgo-command PATH` | PicGo CLI executable | `picgo` on `PATH` |
+| `--picgo-config PATH` | PicGo CLI configuration file | `~/.picgo/config.json` |
+| `--configure` | Run the PicGo uploader wizard and exit | — |
 
 ## Python API
 
 ```python
-from image_migrate_picgo import ServerUploader, migrate_markdown
+from image_migrate_picgo import CliUploader, ServerUploader, migrate_markdown
 
-result = migrate_markdown("README.md", ServerUploader())
-print(result.output_path, result.urls)
+result = migrate_markdown(
+    "notes.md",
+    ServerUploader(),  # or CliUploader()
+    output_path="notes.migrated.md",  # omit to update notes.md in place
+)
+
+print(result.output_path)      # where the result was written
+print(result.migrated_images)  # image references rewritten
+print(result.uploaded_images)  # unique images uploaded
+print(result.urls)             # uploaded URLs
 ```
 
-PicGo CLI 的调用方式：
+## LICENSE
 
-```python
-from image_migrate_picgo import CliUploader, migrate_markdown
-
-result = migrate_markdown("README.md", CliUploader())
-```
-
-`CliUploader()` 从 `PATH` 查找 PicGo CLI，并使用默认配置路径。可以通过 `command` 和 `config` 传入自定义路径。
-
-`migrate_markdown()` 每次处理一个文件。目录迁移可以遍历 Markdown 文件并多次调用该函数。
-
-## 开发检查
-
-```bash
-uv run python -m unittest discover -s test
-uv build
-```
-
-`test/smoke_remote.md` 提供两张公网图片，可用于带有可用 PicGo 配置的完整冒烟测试：
-
-```bash
-image-migrate-picgo test/smoke_remote.md --output test/smoke_output.md
-```
-
-`test/fixtures/markdown/` 包含 10 个测试文件，`test/fixtures/images/` 包含 4 张本地 SVG。单元测试会检查每个文件的图片解析结果与本地路径。启动 PicGo Server 后，可以逐个进行完整上传测试：
-
-```bash
-mkdir -p test/fixtures/output
-for markdown in test/fixtures/markdown/*.md test/fixtures/markdown/nested/*.md; do
-  uv run image-migrate-picgo "$markdown" --output "test/fixtures/output/${markdown##*/}"
-done
-```
-
-测试结果保存在 `test/fixtures/output/`，该目录不会进入 Git。
+This project is licensed under the [MIT License](LICENSE).
