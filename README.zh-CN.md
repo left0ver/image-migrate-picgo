@@ -137,10 +137,10 @@ result = migrate_markdown(
     output_path="notes.migrated.md",  # 省略则直接修改 notes.md
 )
 
-print(result.output_path)      # 结果写入的路径
+print(result.output_path)  # 结果写入的路径
 print(result.migrated_images)  # 改写的图片引用数
 print(result.uploaded_images)  # 上传的图片数（去重后）
-print(result.urls)             # 上传后的 URL
+print(result.urls)  # 上传后的 URL
 ```
 
 ## LICENSE

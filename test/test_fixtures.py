@@ -4,7 +4,6 @@ from pathlib import Path
 from image_migrate_picgo import image_sources
 from image_migrate_picgo.core import _upload_source
 
-
 FIXTURE_DIRECTORY = Path(__file__).parent / "fixtures" / "markdown"
 EXPECTED_IMAGES = {
     "01-inline.md": 2,

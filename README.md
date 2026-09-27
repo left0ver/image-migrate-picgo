@@ -137,10 +137,10 @@ result = migrate_markdown(
     output_path="notes.migrated.md",  # omit to update notes.md in place
 )
 
-print(result.output_path)      # where the result was written
+print(result.output_path)  # where the result was written
 print(result.migrated_images)  # image references rewritten
 print(result.uploaded_images)  # unique images uploaded
-print(result.urls)             # uploaded URLs
+print(result.urls)  # uploaded URLs
 ```
 
 ## LICENSE

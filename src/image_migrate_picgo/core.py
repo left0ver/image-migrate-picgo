@@ -252,9 +252,7 @@ def migrate_markdown(
 
     if sources:
         with (
-            TemporaryDirectory(
-                prefix=".image-migrate-picgo-", dir=source_path.parent
-            )
+            TemporaryDirectory(prefix=".image-migrate-picgo-", dir=source_path.parent)
             if any(source.startswith("data:") for source in sources)
             else nullcontext(source_path.parent)
         ) as directory:
