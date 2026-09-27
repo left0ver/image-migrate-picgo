@@ -1,0 +1,69 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@main
+        with:
+          version: latest
+          enable-cache: false
+
+      - name: Verify tag matches package version
+        run: |
+          if [ "$GITHUB_REF_NAME" != "v$(uv version --short)" ]; then
+            echo "::error::Tag does not match the version in pyproject.toml"
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: uv run --locked python -m unittest discover -s test
+
+      - name: Build distributions
+        run: uv build --no-sources
+
+      - name: Check wheel console script
+        run: uv run --isolated --no-project --with dist/*.whl image-migrate-picgo --help
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@main
+        with:
+          version: latest
+          enable-cache: false
+
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        run: uv publish --trusted-publishing always
