@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           version: latest
           enable-cache: false
@@ -54,7 +54,7 @@ jobs:
       id-token: write
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           version: latest
           enable-cache: false
