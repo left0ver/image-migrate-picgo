@@ -79,7 +79,7 @@ class _PicGoE2E:
         )
         if result.returncode != returncode:
             self.fail(
-                f"image-migrate-picgo 退出码 {result.returncode}\n"
+                f"imp 退出码 {result.returncode}\n"
                 f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
             )
         return result
@@ -239,15 +239,14 @@ class CliE2ETest(_PicGoE2E, unittest.TestCase):
         # 配置文件缺失时 CLI 会启动交互式向导，测试中需要提前拦截
         if not config.is_file():
             raise RuntimeError(
-                f"没有找到 PicGo 配置文件：{config}。"
-                "请先运行 image-migrate-picgo --configure"
+                f"没有找到 PicGo 配置文件：{config}。请先运行 imp --configure"
             )
         pic_bed = json.loads(config.read_text(encoding="utf-8")).get("picBed", {})
         uploader = pic_bed.get("uploader") or pic_bed.get("current")
         if not uploader or not pic_bed.get(uploader):
             raise RuntimeError(
                 f"PicGo 配置文件 {config} 中没有 uploader {uploader!r} 的配置。"
-                "请先运行 image-migrate-picgo --configure"
+                "请先运行 imp --configure"
             )
         cls.upload_args = [
             "--method",

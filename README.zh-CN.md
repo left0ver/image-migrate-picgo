@@ -44,7 +44,7 @@
 [logo]: ./images/logo.png
 ```
 
-运行 `image-migrate-picgo notes.md` 后：
+运行 `imp notes.md` 后：
 
 ```markdown
 ![架构图](<https://cdn.example.com/architecture.png> "概览")
@@ -62,6 +62,8 @@
 pip install image-migrate-picgo
 ```
 
+安装后会提供两个等价的命令：简短的 `imp`（下文示例均使用它）和 `image-migrate-picgo`。
+
 此外，还需要在 PicGo Server 或 PicGo CLI 中配置好图床，见[上传方式](#上传方式)。
 
 ## 快速开始
@@ -70,14 +72,14 @@ pip install image-migrate-picgo
 2. 迁移文件：
 
    ```bash
-   image-migrate-picgo notes.md
+   imp notes.md
    ```
 
 > [!WARNING]
 > 默认会**直接修改原 Markdown 文件**。请先提交到 Git 或备份，也可以用 `--output` 写入新文件：
 >
 > ```bash
-> image-migrate-picgo notes.md --output notes.migrated.md
+> imp notes.md --output notes.migrated.md
 > ```
 
 ## 迁移整个目录
@@ -85,13 +87,13 @@ pip install image-migrate-picgo
 传入目录时，会迁移其中（包括子目录）所有 `.md` 和 `.markdown` 文件，跳过隐藏目录（如 `.git`）和 `node_modules`。
 
 ```bash
-image-migrate-picgo docs/
+imp docs/
 ```
 
 每个文件单独迁移。如果某个文件中有图片上传失败，这个文件保持不变，并给出提示说明是哪个文件、失败原因是什么，其余文件照常迁移。最后会输出汇总，只要有文件失败，命令的退出码就为 1。
 
 ```console
-$ image-migrate-picgo docs/
+$ imp docs/
 已迁移 2 处图片，上传 2 个文件：/home/me/docs/guide.md
 迁移失败：/home/me/docs/broken.md
   FileNotFoundError: [Errno 2] No such file or directory: '/home/me/docs/images/missing.png'
@@ -108,10 +110,10 @@ $ image-migrate-picgo docs/
 
 ```bash
 # 自定义地址
-image-migrate-picgo notes.md --server-url http://127.0.0.1:36677/upload
+imp notes.md --server-url http://127.0.0.1:36677/upload
 
 # PicGo Server 设置了访问密钥
-image-migrate-picgo notes.md --server-secret <secret>
+imp notes.md --server-secret <secret>
 ```
 
 ### PicGo CLI
@@ -122,10 +124,10 @@ image-migrate-picgo notes.md --server-secret <secret>
 npm install picgo -g
 
 # 配置图床（交互式向导）
-image-migrate-picgo --configure
+imp --configure
 
 # 通过 PicGo CLI 上传
-image-migrate-picgo notes.md --method cli
+imp notes.md --method cli
 ```
 
 配置默认保存在 `~/.picgo/config.json`。如果配置文件不存在，使用 `--method cli` 时会自动启动配置向导。
@@ -133,7 +135,7 @@ image-migrate-picgo notes.md --method cli
 ## 命令行参数
 
 ```text
-image-migrate-picgo [OPTIONS] [MARKDOWN]
+imp [OPTIONS] [MARKDOWN]
 ```
 
 | 参数 | 说明 | 默认值 |

@@ -44,7 +44,7 @@ Before:
 [logo]: ./images/logo.png
 ```
 
-After running `image-migrate-picgo notes.md`:
+After running `imp notes.md`:
 
 ```markdown
 ![Architecture](<https://cdn.example.com/architecture.png> "Overview")
@@ -62,6 +62,8 @@ Requires Python 3.11 or newer.
 pip install image-migrate-picgo
 ```
 
+This installs two equivalent commands: the short `imp`, used in the examples below, and `image-migrate-picgo`.
+
 You also need an image host configured in either PicGo Server or PicGo CLI (see [Upload methods](#upload-methods)).
 
 ## Quick start
@@ -70,14 +72,14 @@ You also need an image host configured in either PicGo Server or PicGo CLI (see 
 2. Migrate a file:
 
    ```bash
-   image-migrate-picgo notes.md
+   imp notes.md
    ```
 
 > [!WARNING]
 > By default the Markdown file is **updated in place**. Commit or back it up first, or write the result to a new file with `--output`:
 >
 > ```bash
-> image-migrate-picgo notes.md --output notes.migrated.md
+> imp notes.md --output notes.migrated.md
 > ```
 
 ## Migrating a directory
@@ -85,13 +87,13 @@ You also need an image host configured in either PicGo Server or PicGo CLI (see 
 Pass a directory to migrate every `.md` and `.markdown` file in it, including subdirectories. Hidden directories (such as `.git`) and `node_modules` are skipped.
 
 ```bash
-image-migrate-picgo docs/
+imp docs/
 ```
 
 Each file is migrated on its own. If an image in a file fails to upload, that file is left unchanged, an error message names the file and the reason, and the remaining files are still migrated. A summary is printed at the end, and the command exits with status 1 if any file failed.
 
 ```console
-$ image-migrate-picgo docs/
+$ imp docs/
 已迁移 2 处图片，上传 2 个文件：/home/me/docs/guide.md
 迁移失败：/home/me/docs/broken.md
   FileNotFoundError: [Errno 2] No such file or directory: '/home/me/docs/images/missing.png'
@@ -108,10 +110,10 @@ Uses the HTTP server built into the PicGo desktop app, at `http://127.0.0.1:3667
 
 ```bash
 # Custom address
-image-migrate-picgo notes.md --server-url http://127.0.0.1:36677/upload
+imp notes.md --server-url http://127.0.0.1:36677/upload
 
 # Server protected by a secret
-image-migrate-picgo notes.md --server-secret <secret>
+imp notes.md --server-secret <secret>
 ```
 
 ### PicGo CLI
@@ -122,10 +124,10 @@ Uses the [PicGo core](https://github.com/PicGo/PicGo-Core) command line tool. No
 npm install picgo -g
 
 # Configure an uploader (an interactive wizard)
-image-migrate-picgo --configure
+imp --configure
 
 # Upload through PicGo CLI
-image-migrate-picgo notes.md --method cli
+imp notes.md --method cli
 ```
 
 The configuration is saved to `~/.picgo/config.json` by default. If the configuration file does not exist, `--method cli` starts the wizard automatically.
@@ -133,7 +135,7 @@ The configuration is saved to `~/.picgo/config.json` by default. If the configur
 ## CLI options
 
 ```text
-image-migrate-picgo [OPTIONS] [MARKDOWN]
+imp [OPTIONS] [MARKDOWN]
 ```
 
 | Option | Description | Default |

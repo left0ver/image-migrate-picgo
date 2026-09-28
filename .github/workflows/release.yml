@@ -37,7 +37,9 @@ jobs:
         run: uv build --no-sources
 
       - name: Check wheel console script
-        run: uv run --isolated --no-project --with dist/*.whl image-migrate-picgo --help
+        run: |
+          uv run --isolated --no-project --with dist/*.whl imp --help
+          uv run --isolated --no-project --with dist/*.whl image-migrate-picgo --help
 
       - name: Upload distributions
         uses: actions/upload-artifact@v7

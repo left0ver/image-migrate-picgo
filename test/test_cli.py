@@ -4,7 +4,7 @@ import re
 import sys
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from importlib.metadata import version
+from importlib.metadata import entry_points, version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Thread
@@ -42,6 +42,15 @@ class CliTest(unittest.TestCase):
                     f"(Python {platform.python_version()}, "
                     f"{sys.platform} {platform.machine()})",
                 )
+
+    def test_installs_short_and_long_commands(self) -> None:
+        scripts = {
+            script.name
+            for script in entry_points(group="console_scripts")
+            if script.value == "image_migrate_picgo.cli:app"
+        }
+
+        self.assertEqual(scripts, {"imp", "image-migrate-picgo"})
 
     def test_missing_picgo_command_fails(self) -> None:
         with self.assertRaises(FileNotFoundError):

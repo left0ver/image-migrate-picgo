@@ -62,4 +62,6 @@ jobs:
         run: uv run --locked python -m unittest discover -s test
 
       - name: Check console script
-        run: uv run --locked image-migrate-picgo --help
+        run: |
+          uv run --locked imp --help
+          uv run --locked image-migrate-picgo --help

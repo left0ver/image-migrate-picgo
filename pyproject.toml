@@ -24,6 +24,7 @@ classifiers = [
 ]
 
 [project.scripts]
+imp = "image_migrate_picgo.cli:app"
 image-migrate-picgo = "image_migrate_picgo.cli:app"
 
 [build-system]
