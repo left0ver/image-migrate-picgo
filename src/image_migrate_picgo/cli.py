@@ -69,10 +69,35 @@ def _show_version(value: bool) -> None:
         raise typer.Exit()
 
 
+def _count(value: int, **styles) -> str:
+    return typer.style(str(value), bold=True, **styles)
+
+
 def _echo_result(result: MigrationResult) -> None:
     typer.echo(
-        f"已迁移 {result.migrated_images} 处图片，"
-        f"上传 {result.uploaded_images} 个文件：{result.output_path}"
+        typer.style("✓", fg="green", bold=True)
+        + f" 已迁移 {_count(result.migrated_images)} 处图片，"
+        f"上传 {_count(result.uploaded_images)} 个文件："
+        + typer.style(str(result.output_path), fg="cyan")
+    )
+
+
+def _echo_failure(path: Path, error: Exception) -> None:
+    typer.echo(
+        typer.style("✗ 迁移失败：", fg="red", bold=True)
+        + typer.style(str(path.resolve()), fg="cyan")
+        + "\n  "
+        + typer.style(f"{type(error).__name__}: {error}", fg="red"),
+        err=True,
+    )
+
+
+def _echo_summary(total: int, failures: int) -> None:
+    failed = _count(failures, fg="red") if failures else _count(failures)
+    typer.echo(
+        "\n"
+        + typer.style("迁移完成：", bold=True)
+        + f"成功 {_count(total - failures, fg='green')} 个，失败 {failed} 个"
     )
 
 
@@ -168,14 +193,10 @@ def main(
             result = migrate_markdown(path, uploader, output_path=target, rename=rename)
         except (OSError, RuntimeError, ValueError, SubprocessError) as error:
             failures += 1
-            typer.secho(
-                f"迁移失败：{path.resolve()}\n  {type(error).__name__}: {error}",
-                err=True,
-                fg=typer.colors.RED,
-            )
+            _echo_failure(path, error)
             continue
         _echo_result(result)
-    typer.echo(f"迁移完成：成功 {len(files) - failures} 个，失败 {failures} 个")
+    _echo_summary(len(files), failures)
     if failures:
         raise typer.Exit(1)
 
