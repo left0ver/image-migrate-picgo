@@ -9,6 +9,10 @@ permissions:
   contents: read
 
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -30,9 +34,6 @@ jobs:
             exit 1
           fi
 
-      - name: Run unit tests
-        run: uv run --locked python -m unittest discover -s test
-
       - name: Build distributions
         run: uv build --no-sources
 
@@ -49,7 +50,8 @@ jobs:
           if-no-files-found: error
 
   publish:
-    needs: build
+    # CI（格式检查、lint、各 Python 版本的测试）和构建都成功后才发布
+    needs: [ci, build]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

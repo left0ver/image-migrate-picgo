@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+  # 供 release.yml 调用：发布前必须先通过 CI
+  workflow_call:
 
 permissions:
   contents: read
