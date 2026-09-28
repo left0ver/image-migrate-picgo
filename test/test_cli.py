@@ -77,6 +77,14 @@ class _FakePicGoServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def do_GET(self) -> None:
+        # 模拟远程图片下载中断：声明的长度大于实际发送的内容
+        self.send_response(200)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", "100")
+        self.end_headers()
+        self.wfile.write(b"partial")
+
     def log_message(self, format, *args) -> None:
         pass
 
@@ -151,6 +159,20 @@ class DirectoryTest(unittest.TestCase):
         self.assertIn(f"迁移失败：{missing.resolve()}", output)
         self.assertIn("missing.svg", output)
         self.assertIn("成功 2 个，失败 2 个", output)
+
+    def test_continues_when_remote_image_download_is_incomplete(self) -> None:
+        image = self.server_url.replace("/upload", "/truncated.png")
+        truncated = self.write("truncated.md", f"![T]({image})\n")
+
+        result, output = self.invoke()
+
+        self.assertEqual(result.exit_code, 1, output)
+        self.assert_migrated("a.md")
+        self.assert_migrated("nested/b.markdown")
+        self.assertEqual(truncated.read_text(encoding="utf-8"), f"![T]({image})\n")
+        self.assertIn(f"迁移失败：{truncated.resolve()}", output)
+        self.assertIn("IncompleteRead", output)
+        self.assertIn("成功 2 个，失败 1 个", output)
 
     def test_writes_directory_to_output_directory(self) -> None:
         result, output = self.invoke("--output", str(self.root / "out"))

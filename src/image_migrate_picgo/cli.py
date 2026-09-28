@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 from enum import Enum
+from http.client import HTTPException
 from importlib.metadata import version as package_version
 from pathlib import Path
 from subprocess import SubprocessError
@@ -191,7 +192,13 @@ def main(
             if target is not None:
                 target.parent.mkdir(parents=True, exist_ok=True)
             result = migrate_markdown(path, uploader, output_path=target, rename=rename)
-        except (OSError, RuntimeError, ValueError, SubprocessError) as error:
+        except (
+            OSError,
+            HTTPException,
+            RuntimeError,
+            ValueError,
+            SubprocessError,
+        ) as error:
             failures += 1
             _echo_failure(path, error)
             continue
