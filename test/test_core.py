@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from image_migrate_picgo import image_sources, rewrite_markdown
+from image_migrate_picgo import image_sources, migrate_markdown, rewrite_markdown
 from image_migrate_picgo.core import _upload_source
 
 
@@ -137,6 +137,32 @@ class MarkdownTest(unittest.TestCase):
                 "https://example.com/image.png",
             )
             self.assertEqual(list(directory.iterdir()), [])
+
+
+class MigrateTest(unittest.TestCase):
+    def test_missing_output_directory_fails_before_upload(self) -> None:
+        uploads: list[list[str | Path]] = []
+
+        class RecordingUploader:
+            def upload(self, sources):
+                uploads.append(list(sources))
+                return ["https://cdn.example/image.png"] * len(sources)
+
+        with TemporaryDirectory(prefix="image-test-", dir="test") as name:
+            document = Path(name) / "document.md"
+            document.write_text("![Logo](https://example.com/logo.png)\n")
+
+            with self.assertRaisesRegex(FileNotFoundError, "输出目录不存在"):
+                migrate_markdown(
+                    document,
+                    RecordingUploader(),
+                    output_path=Path(name) / "missing" / "document.md",
+                )
+
+            self.assertEqual(uploads, [])
+            self.assertEqual(
+                document.read_text(), "![Logo](https://example.com/logo.png)\n"
+            )
 
 
 if __name__ == "__main__":

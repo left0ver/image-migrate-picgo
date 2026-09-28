@@ -246,6 +246,8 @@ def migrate_markdown(
         if output_path is not None
         else source_path
     )
+    if not target_path.parent.is_dir():
+        raise FileNotFoundError(f"输出目录不存在：{target_path.parent}")
     content = source_path.read_text(encoding="utf-8")
     all_sources = image_sources(content)
     sources = list(dict.fromkeys(all_sources))
