@@ -1,6 +1,6 @@
 [project]
 name = "image-migrate-picgo"
-version = "0.2.2"
+version = "0.2.3"
 description = "Migrate images in one Markdown file through PicGo"
 readme = "README.md"
 authors = [
