@@ -79,6 +79,26 @@ You also need an image host configured in either PicGo Server or PicGo CLI (see 
 > image-migrate-picgo notes.md --output notes.migrated.md
 > ```
 
+## Migrating a directory
+
+Pass a directory to migrate every `.md` and `.markdown` file in it, including subdirectories. Hidden directories (such as `.git`) and `node_modules` are skipped.
+
+```bash
+image-migrate-picgo docs/
+```
+
+Each file is migrated on its own. If an image in a file fails to upload, that file is left unchanged, an error message names the file and the reason, and the remaining files are still migrated. A summary is printed at the end, and the command exits with status 1 if any file failed.
+
+```console
+$ image-migrate-picgo docs/
+已迁移 2 处图片，上传 2 个文件：/home/me/docs/guide.md
+迁移失败：/home/me/docs/broken.md
+  FileNotFoundError: [Errno 2] No such file or directory: '/home/me/docs/images/missing.png'
+迁移完成：成功 1 个，失败 1 个
+```
+
+Files in a directory are always updated in place, so `--output` cannot be used with a directory.
+
 ## Upload methods
 
 ### PicGo Server (default)
@@ -117,8 +137,8 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `MARKDOWN` | Markdown file to migrate | — |
-| `-o`, `--output PATH` | Write the result to this file instead of updating `MARKDOWN` | Update in place |
+| `MARKDOWN` | Markdown file or directory to migrate | — |
+| `-o`, `--output PATH` | Write the result to this file instead of updating `MARKDOWN`. Not available for directories | Update in place |
 | `--method [server\|cli]` | Upload method | `server` |
 | `--server-url TEXT` | PicGo Server upload URL | `http://127.0.0.1:36677/upload` |
 | `--server-secret TEXT` | PicGo Server secret, sent as a Bearer token | — |

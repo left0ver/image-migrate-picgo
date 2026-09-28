@@ -1,10 +1,12 @@
+import os
 from enum import Enum
 from pathlib import Path
+from subprocess import SubprocessError
 from typing import Annotated
 
 import typer
 
-from .core import migrate_markdown
+from .core import MigrationResult, migrate_markdown
 from .uploaders import (
     CliUploader,
     ServerUploader,
@@ -13,6 +15,7 @@ from .uploaders import (
 )
 
 DEFAULT_PICGO_CONFIG = default_picgo_config()
+MARKDOWN_SUFFIXES = {".md", ".markdown"}
 
 
 class UploadMethod(str, Enum):
@@ -28,9 +31,35 @@ app = typer.Typer(
 )
 
 
+def _markdown_files(directory: Path) -> list[Path]:
+    """递归查找目录下的 Markdown 文件，跳过隐藏目录和 node_modules。"""
+    files: list[Path] = []
+    for root, directories, names in os.walk(directory):
+        directories[:] = [
+            name
+            for name in directories
+            if not name.startswith(".") and name != "node_modules"
+        ]
+        files.extend(
+            Path(root, name)
+            for name in names
+            if Path(name).suffix.lower() in MARKDOWN_SUFFIXES
+        )
+    return sorted(files)
+
+
+def _echo_result(result: MigrationResult) -> None:
+    typer.echo(
+        f"已迁移 {result.migrated_images} 处图片，"
+        f"上传 {result.uploaded_images} 个文件：{result.output_path}"
+    )
+
+
 @app.command(epilog=f"PicGo CLI 默认配置文件：{DEFAULT_PICGO_CONFIG}")
 def main(
-    markdown: Annotated[Path | None, typer.Argument(help="Markdown 文件路径")] = None,
+    markdown: Annotated[
+        Path | None, typer.Argument(help="Markdown 文件或目录路径")
+    ] = None,
     output: Annotated[
         Path | None,
         typer.Option("--output", "-o", help="输出路径，默认更新原文件"),
@@ -68,23 +97,49 @@ def main(
         typer.echo(f"PicGo 配置已保存：{config}")
         return
     if markdown is None:
-        raise typer.BadParameter("需要提供 Markdown 文件路径", param_hint="markdown")
+        raise typer.BadParameter(
+            "需要提供 Markdown 文件或目录路径", param_hint="markdown"
+        )
+    files = None
+    if markdown.is_dir():
+        if output is not None:
+            raise typer.BadParameter(
+                "迁移目录时不支持 --output，只能直接修改原文件",
+                param_hint="--output",
+            )
+        files = _markdown_files(markdown)
+        if not files:
+            typer.echo(f"没有找到 Markdown 文件：{markdown}", err=True)
+            raise typer.Exit(1)
 
     uploader = (
         ServerUploader(server_url, secret=server_secret)
         if method is UploadMethod.server
         else CliUploader(picgo_command, config=picgo_config)
     )
-    result = migrate_markdown(
-        markdown,
-        uploader,
-        output_path=output,
-        rename=rename,
-    )
-    typer.echo(
-        f"已迁移 {result.migrated_images} 处图片，"
-        f"上传 {result.uploaded_images} 个文件：{result.output_path}"
-    )
+    if files is None:
+        _echo_result(
+            migrate_markdown(markdown, uploader, output_path=output, rename=rename)
+        )
+        return
+
+    # 逐个文件迁移：某个文件失败时给出提示，继续处理其余文件
+    failures = 0
+    for path in files:
+        try:
+            result = migrate_markdown(path, uploader, rename=rename)
+        except (OSError, RuntimeError, ValueError, SubprocessError) as error:
+            failures += 1
+            typer.secho(
+                f"迁移失败：{path.resolve()}\n  {type(error).__name__}: {error}",
+                err=True,
+                fg=typer.colors.RED,
+            )
+            continue
+        _echo_result(result)
+    typer.echo(f"迁移完成：成功 {len(files) - failures} 个，失败 {failures} 个")
+    if failures:
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

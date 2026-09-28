@@ -79,6 +79,26 @@ pip install image-migrate-picgo
 > image-migrate-picgo notes.md --output notes.migrated.md
 > ```
 
+## 迁移整个目录
+
+传入目录时，会迁移其中（包括子目录）所有 `.md` 和 `.markdown` 文件，跳过隐藏目录（如 `.git`）和 `node_modules`。
+
+```bash
+image-migrate-picgo docs/
+```
+
+每个文件单独迁移。如果某个文件中有图片上传失败，这个文件保持不变，并给出提示说明是哪个文件、失败原因是什么，其余文件照常迁移。最后会输出汇总，只要有文件失败，命令的退出码就为 1。
+
+```console
+$ image-migrate-picgo docs/
+已迁移 2 处图片，上传 2 个文件：/home/me/docs/guide.md
+迁移失败：/home/me/docs/broken.md
+  FileNotFoundError: [Errno 2] No such file or directory: '/home/me/docs/images/missing.png'
+迁移完成：成功 1 个，失败 1 个
+```
+
+迁移目录时总是直接修改原文件，因此不能和 `--output` 一起使用。
+
 ## 上传方式
 
 ### PicGo Server（默认）
@@ -117,8 +137,8 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
-| `MARKDOWN` | 要迁移的 Markdown 文件 | — |
-| `-o`, `--output PATH` | 把结果写入该文件，而不是修改 `MARKDOWN` | 修改原文件 |
+| `MARKDOWN` | 要迁移的 Markdown 文件或目录 | — |
+| `-o`, `--output PATH` | 把结果写入该文件，而不是修改 `MARKDOWN`；迁移目录时不可用 | 修改原文件 |
 | `--method [server\|cli]` | 上传方式 | `server` |
 | `--server-url TEXT` | PicGo Server 上传地址 | `http://127.0.0.1:36677/upload` |
 | `--server-secret TEXT` | PicGo Server 访问密钥，以 Bearer Token 发送 | — |
