@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="image-migrate-picgo logo" width="128">
+  <img src="https://raw.githubusercontent.com/left0ver/image-migrate-picgo/main/assets/logo.png" alt="image-migrate-picgo logo" width="128">
 </p>
 
 <h1 align="center">image-migrate-picgo</h1>
@@ -9,11 +9,11 @@
   <img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/PicGo-Server%20%7C%20CLI-blue?style=flat-square" alt="PicGo Server and CLI">
   <img src="https://img.shields.io/badge/Images-Markdown%20%7C%20HTML-informational?style=flat-square" alt="Markdown and HTML images">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
+  <a href="https://github.com/left0ver/image-migrate-picgo/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
 </p>
 
 <p align="center">
-  English | <a href="README.zh-CN.md">简体中文</a>
+  English | <a href="https://github.com/left0ver/image-migrate-picgo/blob/main/README.zh-CN.md">简体中文</a>
 </p>
 
 Move every image in a Markdown file to your image host with one command. `image-migrate-picgo` uploads the images through [PicGo](https://github.com/Molunerfinn/PicGo) and rewrites their links to the uploaded URLs.
@@ -175,4 +175,4 @@ print(result.urls)  # uploaded URLs
 
 ## LICENSE
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](https://github.com/left0ver/image-migrate-picgo/blob/main/LICENSE).

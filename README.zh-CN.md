@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="image-migrate-picgo logo" width="128">
+  <img src="https://raw.githubusercontent.com/left0ver/image-migrate-picgo/main/assets/logo.png" alt="image-migrate-picgo logo" width="128">
 </p>
 
 <h1 align="center">image-migrate-picgo</h1>
@@ -9,11 +9,11 @@
   <img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/PicGo-Server%20%7C%20CLI-blue?style=flat-square" alt="PicGo Server and CLI">
   <img src="https://img.shields.io/badge/Images-Markdown%20%7C%20HTML-informational?style=flat-square" alt="Markdown and HTML images">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
+  <a href="https://github.com/left0ver/image-migrate-picgo/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | 简体中文
+  <a href="https://github.com/left0ver/image-migrate-picgo/blob/main/README.md">English</a> | 简体中文
 </p>
 
 一条命令，把 Markdown 文件里的所有图片搬到你的图床。`image-migrate-picgo` 通过 [PicGo](https://github.com/Molunerfinn/PicGo) 上传图片，并把文件中的图片地址替换为上传后的 URL。
@@ -175,4 +175,4 @@ print(result.urls)  # 上传后的 URL
 
 ## LICENSE
 
-本项目使用 [MIT License](LICENSE)。
+本项目使用 [MIT License](https://github.com/left0ver/image-migrate-picgo/blob/main/LICENSE)。
