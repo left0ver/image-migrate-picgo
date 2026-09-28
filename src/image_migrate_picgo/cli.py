@@ -34,14 +34,16 @@ app = typer.Typer(
 )
 
 
-def _markdown_files(directory: Path) -> list[Path]:
-    """递归查找目录下的 Markdown 文件，跳过隐藏目录和 node_modules。"""
+def _markdown_files(directory: Path, exclude: Path | None = None) -> list[Path]:
+    """递归查找目录下的 Markdown 文件，跳过隐藏目录、node_modules 和 exclude 目录。"""
     files: list[Path] = []
     for root, directories, names in os.walk(directory):
         directories[:] = [
             name
             for name in directories
-            if not name.startswith(".") and name != "node_modules"
+            if not name.startswith(".")
+            and name != "node_modules"
+            and (exclude is None or Path(root, name).resolve() != exclude)
         ]
         files.extend(
             Path(root, name)
@@ -81,7 +83,7 @@ def main(
     ] = None,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="输出路径，默认更新原文件"),
+        typer.Option("--output", "-o", help="输出路径，默认更新原文件；迁移目录时为输出目录"),
     ] = None,
     method: Annotated[
         UploadMethod, typer.Option(help="上传方式")
@@ -132,11 +134,12 @@ def main(
     files = None
     if markdown.is_dir():
         if output is not None:
-            raise typer.BadParameter(
-                "迁移目录时不支持 --output，只能直接修改原文件",
-                param_hint="--output",
-            )
-        files = _markdown_files(markdown)
+            output = output.expanduser().resolve()
+            if output.exists() and not output.is_dir():
+                raise typer.BadParameter(
+                    "迁移目录时 --output 必须是目录", param_hint="--output"
+                )
+        files = _markdown_files(markdown, exclude=output)
         if not files:
             typer.echo(f"没有找到 Markdown 文件：{markdown}", err=True)
             raise typer.Exit(1)
@@ -155,8 +158,14 @@ def main(
     # 逐个文件迁移：某个文件失败时给出提示，继续处理其余文件
     failures = 0
     for path in files:
+        # 指定输出目录时，保持文件在原目录中的相对位置
+        target = None if output is None else output / path.relative_to(markdown)
         try:
-            result = migrate_markdown(path, uploader, rename=rename)
+            if target is not None:
+                target.parent.mkdir(parents=True, exist_ok=True)
+            result = migrate_markdown(
+                path, uploader, output_path=target, rename=rename
+            )
         except (OSError, RuntimeError, ValueError, SubprocessError) as error:
             failures += 1
             typer.secho(

@@ -100,7 +100,11 @@ $ imp docs/
 迁移完成：成功 1 个，失败 1 个
 ```
 
-Files in a directory are always updated in place, so `--output` cannot be used with a directory.
+By default files in a directory are updated in place. Pass `--output` with a directory to write the results there instead, keeping each file's relative path (missing directories are created):
+
+```bash
+imp docs/ --output docs-migrated/
+```
 
 ## Upload methods
 
@@ -141,7 +145,7 @@ imp [OPTIONS] [MARKDOWN]
 | Option | Description | Default |
 | --- | --- | --- |
 | `MARKDOWN` | Markdown file or directory to migrate | — |
-| `-o`, `--output PATH` | Write the result to this file instead of updating `MARKDOWN`. Not available for directories | Update in place |
+| `-o`, `--output PATH` | Write the result to this file instead of updating `MARKDOWN`. When `MARKDOWN` is a directory, write the results into this directory | Update in place |
 | `--method [server\|cli]` | Upload method | `server` |
 | `--server-url TEXT` | PicGo Server upload URL | `http://127.0.0.1:36677/upload` |
 | `--server-secret TEXT` | PicGo Server secret, sent as a Bearer token | — |

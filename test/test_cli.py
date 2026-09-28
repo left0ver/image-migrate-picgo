@@ -152,8 +152,24 @@ class DirectoryTest(unittest.TestCase):
         self.assertIn("missing.svg", output)
         self.assertIn("成功 2 个，失败 2 个", output)
 
-    def test_rejects_output_for_directory(self) -> None:
+    def test_writes_directory_to_output_directory(self) -> None:
         result, output = self.invoke("--output", str(self.root / "out"))
+
+        self.assertEqual(result.exit_code, 0, output)
+        self.assert_not_migrated()
+        self.assert_migrated("out/a.md")
+        self.assert_migrated("out/nested/b.markdown")
+        self.assertFalse((self.root / "out/.hidden").exists())
+        self.assertIn("成功 2 个，失败 0 个", output)
+
+        # 再次迁移时跳过位于源目录内的输出目录
+        result, output = self.invoke("--output", str(self.root / "out"))
+        self.assertIn("成功 2 个，失败 0 个", output)
+
+    def test_rejects_file_as_output_for_directory(self) -> None:
+        self.write("out.md", "")
+
+        result, output = self.invoke("--output", str(self.root / "out.md"))
 
         self.assertEqual(result.exit_code, 2, output)
         self.assertIn("--output", output)

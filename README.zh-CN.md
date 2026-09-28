@@ -100,7 +100,11 @@ $ imp docs/
 迁移完成：成功 1 个，失败 1 个
 ```
 
-迁移目录时总是直接修改原文件，因此不能和 `--output` 一起使用。
+迁移目录时默认直接修改原文件。也可以用 `--output` 指定输出目录，结果按原来的相对路径写入该目录（不存在的目录会自动创建）：
+
+```bash
+imp docs/ --output docs-migrated/
+```
 
 ## 上传方式
 
@@ -141,7 +145,7 @@ imp [OPTIONS] [MARKDOWN]
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
 | `MARKDOWN` | 要迁移的 Markdown 文件或目录 | — |
-| `-o`, `--output PATH` | 把结果写入该文件，而不是修改 `MARKDOWN`；迁移目录时不可用 | 修改原文件 |
+| `-o`, `--output PATH` | 把结果写入该文件，而不是修改 `MARKDOWN`；迁移目录时为输出目录 | 修改原文件 |
 | `--method [server\|cli]` | 上传方式 | `server` |
 | `--server-url TEXT` | PicGo Server 上传地址 | `http://127.0.0.1:36677/upload` |
 | `--server-secret TEXT` | PicGo Server 访问密钥，以 Bearer Token 发送 | — |
