@@ -5,6 +5,7 @@
 <h1 align="center">image-migrate-picgo</h1>
 
 <p align="center">
+  <a href="https://pypi.org/project/image-migrate-picgo/"><img src="https://img.shields.io/pypi/v/image-migrate-picgo?style=flat-square&label=PyPI" alt="PyPI version"></a>
   <img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/PicGo-Server%20%7C%20CLI-blue?style=flat-square" alt="PicGo Server and CLI">
   <img src="https://img.shields.io/badge/Images-Markdown%20%7C%20HTML-informational?style=flat-square" alt="Markdown and HTML images">
