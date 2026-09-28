@@ -1,6 +1,10 @@
+import re
 import unittest
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import Thread
 
 from image_migrate_picgo import image_sources, migrate_markdown, rewrite_markdown
 from image_migrate_picgo.core import _upload_source
@@ -139,30 +143,113 @@ class MarkdownTest(unittest.TestCase):
             self.assertEqual(list(directory.iterdir()), [])
 
 
-class MigrateTest(unittest.TestCase):
-    def test_missing_output_directory_fails_before_upload(self) -> None:
-        uploads: list[list[str | Path]] = []
+PIXEL_DATA_URL = (
+    "data:image/png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+TIMESTAMP_NAME_RE = re.compile(r"\d{15}")
 
-        class RecordingUploader:
-            def upload(self, sources):
-                uploads.append(list(sources))
-                return ["https://cdn.example/image.png"] * len(sources)
 
-        with TemporaryDirectory(prefix="image-test-", dir="test") as name:
-            document = Path(name) / "document.md"
-            document.write_text("![Logo](https://example.com/logo.png)\n")
+class RecordingUploader:
+    """记录上传时收到的来源；临时文件在上传后会被删除，所以同时保存文件内容。"""
 
-            with self.assertRaisesRegex(FileNotFoundError, "输出目录不存在"):
-                migrate_markdown(
-                    document,
-                    RecordingUploader(),
-                    output_path=Path(name) / "missing" / "document.md",
-                )
+    def __init__(self) -> None:
+        self.sources: list[str | Path] = []
+        self.contents: list[bytes | None] = []
 
-            self.assertEqual(uploads, [])
-            self.assertEqual(
-                document.read_text(), "![Logo](https://example.com/logo.png)\n"
+    def upload(self, sources):
+        for source in sources:
+            self.sources.append(source)
+            self.contents.append(
+                source.read_bytes() if isinstance(source, Path) else None
             )
+        return [f"https://cdn.example/{index}.png" for index in range(len(sources))]
+
+
+class _QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args) -> None:
+        pass
+
+
+class MigrateTest(unittest.TestCase):
+    def setUp(self) -> None:
+        directory = TemporaryDirectory(prefix="image-test-", dir="test")
+        self.addCleanup(directory.cleanup)
+        self.directory = Path(directory.name)
+        images = self.directory / "images"
+        images.mkdir()
+        self.image = images / "sun.svg"
+        self.image.write_bytes(b"<svg>sun</svg>")
+        self.remote_image = images / "remote.svg"
+        self.remote_image.write_bytes(b"<svg>remote</svg>")
+
+        server = ThreadingHTTPServer(
+            ("127.0.0.1", 0), partial(_QuietHandler, directory=images)
+        )
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        Thread(target=server.serve_forever, daemon=True).start()
+        self.remote_url = f"http://127.0.0.1:{server.server_port}/remote.svg"
+
+        self.document = self.directory / "document.md"
+        self.document.write_text(
+            f"![太阳](images/sun.svg)\n\n![远程]({self.remote_url})\n\n"
+            f"![像素]({PIXEL_DATA_URL})\n\n![太阳二](images/sun.svg)\n",
+            encoding="utf-8",
+        )
+
+    def test_renames_images_to_timestamps_before_upload(self) -> None:
+        uploader = RecordingUploader()
+
+        result = migrate_markdown(self.document, uploader)
+
+        names = [Path(source).stem for source in uploader.sources]
+        self.assertEqual(
+            [Path(source).suffix for source in uploader.sources],
+            [".svg", ".svg", ".png"],
+        )
+        for name in names:
+            self.assertRegex(name, TIMESTAMP_NAME_RE)
+        self.assertEqual([int(name) - int(names[0]) for name in names], [0, 1, 2])
+        self.assertEqual(
+            uploader.contents[:2], [b"<svg>sun</svg>", b"<svg>remote</svg>"]
+        )
+        self.assertTrue(uploader.contents[2].startswith(b"\x89PNG"))
+        self.assertEqual(
+            result.urls, tuple(f"https://cdn.example/{i}.png" for i in range(3))
+        )
+        self.assertEqual(
+            self.document.read_text(encoding="utf-8"),
+            "![太阳](<https://cdn.example/0.png>)\n\n"
+            "![远程](<https://cdn.example/1.png>)\n\n"
+            "![像素](<https://cdn.example/2.png>)\n\n"
+            "![太阳二](<https://cdn.example/0.png>)\n",
+        )
+        self.assertEqual(self.image.read_bytes(), b"<svg>sun</svg>")
+        self.assertEqual(list(self.directory.glob(".image-migrate-picgo-*")), [])
+
+    def test_keeps_original_names_without_rename(self) -> None:
+        uploader = RecordingUploader()
+
+        migrate_markdown(self.document, uploader, rename=False)
+
+        self.assertEqual(uploader.sources[0], self.image.resolve())
+        self.assertEqual(uploader.sources[1], self.remote_url)
+        self.assertEqual(Path(uploader.sources[2]).name, "data-2.png")
+
+    def test_missing_output_directory_fails_before_upload(self) -> None:
+        uploader = RecordingUploader()
+        original = self.document.read_text(encoding="utf-8")
+
+        with self.assertRaisesRegex(FileNotFoundError, "输出目录不存在"):
+            migrate_markdown(
+                self.document,
+                uploader,
+                output_path=self.directory / "missing" / "document.md",
+            )
+
+        self.assertEqual(uploader.sources, [])
+        self.assertEqual(self.document.read_text(encoding="utf-8"), original)
 
 
 if __name__ == "__main__":

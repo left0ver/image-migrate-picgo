@@ -54,6 +54,10 @@ def main(
         Path,
         typer.Option(help="PicGo CLI 配置文件"),
     ] = DEFAULT_PICGO_CONFIG,
+    rename: Annotated[
+        bool,
+        typer.Option(help="上传前将图片重命名为时间戳，格式与 PicGo 应用相同"),
+    ] = True,
     configure: Annotated[
         bool,
         typer.Option("--configure", help="启动 PicGo uploader 配置向导"),
@@ -75,6 +79,7 @@ def main(
         markdown,
         uploader,
         output_path=output,
+        rename=rename,
     )
     typer.echo(
         f"已迁移 {result.migrated_images} 处图片，"

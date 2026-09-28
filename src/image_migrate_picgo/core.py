@@ -1,13 +1,15 @@
 import mimetypes
+import shutil
 from collections.abc import Mapping
 from contextlib import nullcontext
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from urllib.parse import unquote
-from urllib.request import urlopen
+from urllib.parse import unquote, urlsplit
+from urllib.request import Request, urlopen
 
 from markdown_it import MarkdownIt
 from markdown_it.rules_inline import backtick as parse_backtick
@@ -201,19 +203,25 @@ def rewrite_markdown(content: str, replacements: Mapping[str, str]) -> str:
     return content
 
 
-def _decode_data_image(
-    source: str,
-    directory: Path,
-    index: int,
-) -> Path:
-    with urlopen(source) as response:
+def _timestamp_name(moment: datetime, index: int) -> str:
+    # 与 PicGo 应用的自动重命名一致：YYYYMMDDHHmmSSS，每个文件递增 1 毫秒
+    moment += timedelta(milliseconds=index)
+    return f"{moment:%Y%m%d%H%M}{moment.microsecond // 1000:03d}"
+
+
+def _save_image(source: str, directory: Path, name: str) -> Path:
+    request = Request(source, headers={"User-Agent": "image-migrate-picgo"})
+    with urlopen(request, timeout=60) as response:
         content_type = response.headers.get_content_type()
-        if not content_type.startswith("image/"):
-            raise ValueError("Data URL 的媒体类型需要为 image/*")
-        target = (
-            directory
-            / f"data-{index}{mimetypes.guess_extension(content_type) or '.img'}"
+        suffix = (
+            ""
+            if source.startswith("data:")
+            else Path(unquote(urlsplit(source).path)).suffix
         )
+        if not suffix and not content_type.startswith("image/"):
+            raise ValueError(f"图片的媒体类型需要为 image/*：{content_type}")
+        suffix = suffix or mimetypes.guess_extension(content_type) or ".img"
+        target = directory / f"{name}{suffix}"
         target.write_bytes(response.read())
     return target
 
@@ -223,15 +231,20 @@ def _upload_source(
     markdown_path: Path,
     directory: Path,
     index: int,
+    name: str | None = None,
 ) -> str | Path:
     if source.startswith("data:"):
-        return _decode_data_image(source, directory, index)
+        return _save_image(source, directory, name or f"data-{index}")
     if source.startswith(("http://", "https://", "//")):
-        return f"https:{source}" if source.startswith("//") else source
+        url = f"https:{source}" if source.startswith("//") else source
+        return url if name is None else _save_image(url, directory, name)
     path = Path(unquote(source.split("#", 1)[0].split("?", 1)[0])).expanduser()
     if not path.is_absolute():
         path = markdown_path.parent / path
-    return path.resolve(strict=True)
+    path = path.resolve(strict=True)
+    if name is None:
+        return path
+    return Path(shutil.copyfile(path, directory / f"{name}{path.suffix}"))
 
 
 def migrate_markdown(
@@ -239,6 +252,7 @@ def migrate_markdown(
     uploader: Uploader,
     *,
     output_path: str | Path | None = None,
+    rename: bool = True,
 ) -> MigrationResult:
     source_path = Path(markdown_path).expanduser().resolve(strict=True)
     target_path = (
@@ -253,13 +267,20 @@ def migrate_markdown(
     sources = list(dict.fromkeys(all_sources))
 
     if sources:
+        now = datetime.now().astimezone()
         with (
             TemporaryDirectory(prefix=".image-migrate-picgo-", dir=source_path.parent)
-            if any(source.startswith("data:") for source in sources)
+            if rename or any(source.startswith("data:") for source in sources)
             else nullcontext(source_path.parent)
         ) as directory:
             upload_sources = [
-                _upload_source(source, source_path, Path(directory), index)
+                _upload_source(
+                    source,
+                    source_path,
+                    Path(directory),
+                    index,
+                    _timestamp_name(now, index) if rename else None,
+                )
                 for index, source in enumerate(sources)
             ]
             urls = tuple(uploader.upload(upload_sources))

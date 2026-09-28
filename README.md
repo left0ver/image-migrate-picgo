@@ -124,6 +124,7 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 | `--server-secret TEXT` | PicGo Server secret, sent as a Bearer token | — |
 | `--picgo-command PATH` | PicGo CLI executable | `picgo` on `PATH` |
 | `--picgo-config PATH` | PicGo CLI configuration file | `~/.picgo/config.json` |
+| `--rename` / `--no-rename` | Rename images to a timestamp before uploading, like the PicGo app's auto rename (e.g. `202609281430123.png`) | `--rename` |
 | `--configure` | Run the PicGo uploader wizard and exit | — |
 
 ## Python API
@@ -135,6 +136,7 @@ result = migrate_markdown(
     "notes.md",
     ServerUploader(),  # or CliUploader()
     output_path="notes.migrated.md",  # omit to update notes.md in place
+    rename=False,  # keep original file names (default: rename to a timestamp)
 )
 
 print(result.output_path)  # where the result was written

@@ -124,6 +124,7 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 | `--server-secret TEXT` | PicGo Server 访问密钥，以 Bearer Token 发送 | — |
 | `--picgo-command PATH` | PicGo CLI 可执行文件 | 从 `PATH` 查找 `picgo` |
 | `--picgo-config PATH` | PicGo CLI 配置文件 | `~/.picgo/config.json` |
+| `--rename` / `--no-rename` | 上传前将图片重命名为时间戳，与 PicGo 应用的自动重命名相同（如 `202609281430123.png`） | `--rename` |
 | `--configure` | 启动 PicGo 图床配置向导后退出 | — |
 
 ## Python API
@@ -135,6 +136,7 @@ result = migrate_markdown(
     "notes.md",
     ServerUploader(),  # 或 CliUploader()
     output_path="notes.migrated.md",  # 省略则直接修改 notes.md
+    rename=False,  # 保留原文件名（默认重命名为时间戳）
 )
 
 print(result.output_path)  # 结果写入的路径
