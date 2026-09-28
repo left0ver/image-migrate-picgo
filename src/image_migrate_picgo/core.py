@@ -1,13 +1,16 @@
 import mimetypes
 import shutil
+import time
 from collections.abc import Mapping
 from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from html import escape
 from html.parser import HTMLParser
+from http.client import HTTPException
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.error import HTTPError
 from urllib.parse import unquote, urlsplit
 from urllib.request import Request, urlopen
 
@@ -209,7 +212,30 @@ def _timestamp_name(moment: datetime, index: int) -> str:
     return f"{moment:%Y%m%d%H%M}{moment.microsecond // 1000:03d}"
 
 
+# 下载远程图片失败时的重试次数，以及每次重试前等待的秒数（逐次递增）
+_DOWNLOAD_RETRIES = 3
+_DOWNLOAD_RETRY_DELAY = 1.0
+
+
+def _is_transient(error: Exception) -> bool:
+    """连接中断、超时和服务端错误可以重试；404 等客户端错误重试也不会成功。"""
+    if isinstance(error, HTTPError):
+        return error.code >= 500 or error.code == 429
+    return isinstance(error, (OSError, HTTPException))
+
+
 def _save_image(source: str, directory: Path, name: str) -> Path:
+    for attempt in range(_DOWNLOAD_RETRIES):
+        try:
+            return _download_image(source, directory, name)
+        except Exception as error:
+            if not _is_transient(error):
+                raise
+        time.sleep(_DOWNLOAD_RETRY_DELAY * (attempt + 1))
+    return _download_image(source, directory, name)
+
+
+def _download_image(source: str, directory: Path, name: str) -> Path:
     request = Request(source, headers={"User-Agent": "image-migrate-picgo"})
     with urlopen(request, timeout=60) as response:
         content_type = response.headers.get_content_type()

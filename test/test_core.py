@@ -1,10 +1,17 @@
 import re
 import unittest
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.client import IncompleteRead
+from http.server import (
+    BaseHTTPRequestHandler,
+    SimpleHTTPRequestHandler,
+    ThreadingHTTPServer,
+)
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Thread
+from unittest import mock
+from urllib.error import HTTPError
 
 from image_migrate_picgo import image_sources, migrate_markdown, rewrite_markdown
 from image_migrate_picgo.core import _upload_source
@@ -250,6 +257,95 @@ class MigrateTest(unittest.TestCase):
 
         self.assertEqual(uploader.sources, [])
         self.assertEqual(self.document.read_text(encoding="utf-8"), original)
+
+
+class _FlakyImageHandler(BaseHTTPRequestHandler):
+    """前 failures 次请求返回不完整的内容（或 status 状态码），之后返回完整图片。"""
+
+    failures = 0
+    status = 200
+    requests = 0
+
+    def do_GET(self) -> None:
+        type(self).requests += 1
+        if type(self).requests > type(self).failures:
+            self._send(200, b"<svg>remote</svg>")
+        elif self.status == 200:
+            # 声明的长度大于实际发送的内容，模拟连接中途断开
+            self._send(200, b"<svg>", length=100)
+        else:
+            self._send(self.status, b"error")
+
+    def _send(self, status: int, body: bytes, length: int | None = None) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", "image/svg+xml")
+        self.send_header("Content-Length", str(length or len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args) -> None:
+        pass
+
+
+class DownloadRetryTest(unittest.TestCase):
+    def setUp(self) -> None:
+        directory = TemporaryDirectory(prefix="image-test-", dir="test")
+        self.addCleanup(directory.cleanup)
+        self.directory = Path(directory.name)
+        self.document = self.directory / "document.md"
+        patcher = mock.patch("image_migrate_picgo.core._DOWNLOAD_RETRY_DELAY", 0)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def serve(self, failures: int, status: int = 200) -> type[_FlakyImageHandler]:
+        handler = type(
+            "Handler",
+            (_FlakyImageHandler,),
+            {"failures": failures, "status": status, "requests": 0},
+        )
+        server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        Thread(target=server.serve_forever, daemon=True).start()
+        self.document.write_text(
+            f"![远程](http://127.0.0.1:{server.server_port}/remote.svg)\n",
+            encoding="utf-8",
+        )
+        return handler
+
+    def test_retries_incomplete_download_three_times(self) -> None:
+        handler = self.serve(failures=3)
+        uploader = RecordingUploader()
+
+        migrate_markdown(self.document, uploader)
+
+        self.assertEqual(handler.requests, 4)
+        self.assertEqual(uploader.contents, [b"<svg>remote</svg>"])
+
+    def test_fails_after_three_retries(self) -> None:
+        handler = self.serve(failures=4)
+        uploader = RecordingUploader()
+
+        with self.assertRaises(IncompleteRead):
+            migrate_markdown(self.document, uploader)
+
+        self.assertEqual(handler.requests, 4)
+        self.assertEqual(uploader.sources, [])
+
+    def test_retries_server_errors(self) -> None:
+        handler = self.serve(failures=1, status=503)
+
+        migrate_markdown(self.document, RecordingUploader())
+
+        self.assertEqual(handler.requests, 2)
+
+    def test_does_not_retry_client_errors(self) -> None:
+        handler = self.serve(failures=1, status=404)
+
+        with self.assertRaises(HTTPError):
+            migrate_markdown(self.document, RecordingUploader())
+
+        self.assertEqual(handler.requests, 1)
 
 
 if __name__ == "__main__":

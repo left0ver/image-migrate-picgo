@@ -8,6 +8,7 @@ from importlib.metadata import entry_points, version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Thread
+from unittest import mock
 
 from typer.testing import CliRunner
 
@@ -100,6 +101,9 @@ class DirectoryTest(unittest.TestCase):
         self.write("nested/b.markdown", "![B](../images/ok.svg)\n")
         self.write(".hidden/c.md", "![C](../images/ok.svg)\n")
         self.write("notes.txt", "![D](images/ok.svg)\n")
+        patcher = mock.patch("image_migrate_picgo.core._DOWNLOAD_RETRY_DELAY", 0)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         server = ThreadingHTTPServer(("127.0.0.1", 0), _FakePicGoServer)
         self.addCleanup(server.server_close)
