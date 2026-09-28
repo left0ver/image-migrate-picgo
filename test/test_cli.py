@@ -1,5 +1,7 @@
 import json
+import platform
 import re
+import sys
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
@@ -36,7 +38,9 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(result.exit_code, 0)
                 self.assertEqual(
                     ANSI_RE.sub("", result.stdout).strip(),
-                    f"image-migrate-picgo {version('image-migrate-picgo')}",
+                    f"image-migrate-picgo {version('image-migrate-picgo')} "
+                    f"(Python {platform.python_version()}, "
+                    f"{sys.platform} {platform.machine()})",
                 )
 
     def test_missing_picgo_command_fails(self) -> None:

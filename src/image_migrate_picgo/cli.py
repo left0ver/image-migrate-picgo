@@ -1,4 +1,6 @@
 import os
+import platform
+import sys
 from enum import Enum
 from importlib.metadata import version as package_version
 from pathlib import Path
@@ -51,7 +53,17 @@ def _markdown_files(directory: Path) -> list[Path]:
 
 def _show_version(value: bool) -> None:
     if value:
-        typer.echo(f"image-migrate-picgo {package_version('image-migrate-picgo')}")
+        typer.echo(
+            typer.style("image-migrate-picgo", bold=True)
+            + " "
+            + typer.style(package_version("image-migrate-picgo"), fg="green", bold=True)
+            + " "
+            + typer.style(
+                f"(Python {platform.python_version()}, "
+                f"{sys.platform} {platform.machine()})",
+                dim=True,
+            )
+        )
         raise typer.Exit()
 
 
