@@ -60,7 +60,9 @@ class _PicGoE2E:
     def tearDown(self) -> None:
         self._directory.cleanup()
 
-    def run_cli(self, *args: str | Path) -> subprocess.CompletedProcess[str]:
+    def run_cli(
+        self, *args: str | Path, returncode: int = 0
+    ) -> subprocess.CompletedProcess[str]:
         result = subprocess.run(
             [
                 sys.executable,
@@ -75,7 +77,7 @@ class _PicGoE2E:
             stdin=subprocess.DEVNULL,
             timeout=300,
         )
-        if result.returncode != 0:
+        if result.returncode != returncode:
             self.fail(
                 f"image-migrate-picgo 退出码 {result.returncode}\n"
                 f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
@@ -143,6 +145,53 @@ class _PicGoE2E:
         self.assert_migrated(
             original, document.read_text(encoding="utf-8"), result.stdout
         )
+        self.assert_no_temporary_directory()
+
+    def test_migrates_directory_and_reports_failed_files(self) -> None:
+        # 只保留部分 fixture，减少真实上传的图片数量
+        for document in self.markdown_directory.rglob("*.md"):
+            if document.name not in {"01-inline.md", "06-nested.md", "10-data-url.md"}:
+                document.unlink()
+        originals = {
+            document: document.read_text(encoding="utf-8")
+            for document in sorted(self.markdown_directory.rglob("*.md"))
+        }
+        broken = {
+            self.markdown_directory
+            / "missing-local.md": "![丢失](../images/missing.svg)\n",
+            self.markdown_directory / "missing-remote.md": (
+                "![失效](https://www.python.org/static/community_logos/"
+                "image-migrate-picgo-missing.png)\n"
+            ),
+            self.markdown_directory / ".drafts" / "draft.md": (
+                "![草稿](../../images/sun.svg)\n"
+            ),
+        }
+        for document, content in broken.items():
+            document.parent.mkdir(exist_ok=True)
+            document.write_text(content, encoding="utf-8")
+
+        result = self.run_cli(self.markdown_directory, returncode=1)
+
+        lines = result.stdout.splitlines()
+        for document, original in originals.items():
+            with self.subTest(document=document.name):
+                summary = next(
+                    (line for line in lines if line.endswith(str(document.resolve()))),
+                    "",
+                )
+                self.assert_migrated(
+                    original, document.read_text(encoding="utf-8"), summary
+                )
+        # 失败的文件和隐藏目录中的文件保持不变
+        for document, content in broken.items():
+            self.assertEqual(document.read_text(encoding="utf-8"), content)
+        for name in ("missing-local.md", "missing-remote.md"):
+            document = (self.markdown_directory / name).resolve()
+            self.assertIn(f"迁移失败：{document}", result.stderr)
+        self.assertIn("missing.svg", result.stderr)
+        self.assertIn("HTTP Error 404", result.stderr)
+        self.assertIn("迁移完成：成功 3 个，失败 2 个", result.stdout)
         self.assert_no_temporary_directory()
 
 
