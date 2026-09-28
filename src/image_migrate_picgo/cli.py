@@ -83,7 +83,9 @@ def main(
     ] = None,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="输出路径，默认更新原文件；迁移目录时为输出目录"),
+        typer.Option(
+            "--output", "-o", help="输出路径，默认更新原文件；迁移目录时为输出目录"
+        ),
     ] = None,
     method: Annotated[
         UploadMethod, typer.Option(help="上传方式")
@@ -163,9 +165,7 @@ def main(
         try:
             if target is not None:
                 target.parent.mkdir(parents=True, exist_ok=True)
-            result = migrate_markdown(
-                path, uploader, output_path=target, rename=rename
-            )
+            result = migrate_markdown(path, uploader, output_path=target, rename=rename)
         except (OSError, RuntimeError, ValueError, SubprocessError) as error:
             failures += 1
             typer.secho(
