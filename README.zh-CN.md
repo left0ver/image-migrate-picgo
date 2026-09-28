@@ -146,6 +146,7 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 | `--picgo-config PATH` | PicGo CLI 配置文件 | `~/.picgo/config.json` |
 | `--rename` / `--no-rename` | 上传前将图片重命名为时间戳，与 PicGo 应用的自动重命名相同（如 `202609281430123.png`） | `--rename` |
 | `--configure` | 启动 PicGo 图床配置向导后退出 | — |
+| `-V`, `--version` | 显示版本号后退出 | — |
 
 ## Python API
 

@@ -146,6 +146,7 @@ image-migrate-picgo [OPTIONS] [MARKDOWN]
 | `--picgo-config PATH` | PicGo CLI configuration file | `~/.picgo/config.json` |
 | `--rename` / `--no-rename` | Rename images to a timestamp before uploading, like the PicGo app's auto rename (e.g. `202609281430123.png`) | `--rename` |
 | `--configure` | Run the PicGo uploader wizard and exit | — |
+| `-V`, `--version` | Show the version and exit | — |
 
 ## Python API
 

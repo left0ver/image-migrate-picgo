@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from importlib.metadata import version as package_version
 from pathlib import Path
 from subprocess import SubprocessError
 from typing import Annotated
@@ -48,6 +49,12 @@ def _markdown_files(directory: Path) -> list[Path]:
     return sorted(files)
 
 
+def _show_version(value: bool) -> None:
+    if value:
+        typer.echo(f"image-migrate-picgo {package_version('image-migrate-picgo')}")
+        raise typer.Exit()
+
+
 def _echo_result(result: MigrationResult) -> None:
     typer.echo(
         f"已迁移 {result.migrated_images} 处图片，"
@@ -90,6 +97,16 @@ def main(
     configure: Annotated[
         bool,
         typer.Option("--configure", help="启动 PicGo uploader 配置向导"),
+    ] = False,
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-V",
+            callback=_show_version,
+            is_eager=True,
+            help="显示版本号并退出",
+        ),
     ] = False,
 ) -> None:
     if configure:

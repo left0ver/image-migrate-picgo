@@ -2,6 +2,7 @@ import json
 import re
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Thread
@@ -26,6 +27,17 @@ class CliTest(unittest.TestCase):
         self.assertIn("--picgo-config", output)
         self.assertIn("--configure", output)
         self.assertNotIn("下载 PicGo", output)
+
+    def test_version_shows_package_version(self) -> None:
+        for option in ("--version", "-V"):
+            with self.subTest(option=option):
+                result = CliRunner().invoke(app, [option])
+
+                self.assertEqual(result.exit_code, 0)
+                self.assertEqual(
+                    ANSI_RE.sub("", result.stdout).strip(),
+                    f"image-migrate-picgo {version('image-migrate-picgo')}",
+                )
 
     def test_missing_picgo_command_fails(self) -> None:
         with self.assertRaises(FileNotFoundError):
